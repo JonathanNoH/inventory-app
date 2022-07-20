@@ -1,5 +1,10 @@
 const Item = require('../models/item');
 
+//index
+exports.index = (req, res) => {
+  res.send('NOT IMPLEMENTED: Inventory home page');
+};
+
 //Display list of all items
 exports.item_list = (req, res) => {
   res.send('NOT IMPLEMENTED: Item List');
