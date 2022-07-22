@@ -20,7 +20,14 @@ exports.index = (req, res) => {
 
 //Display list of all items
 exports.item_list = (req, res) => {
-  res.send('NOT IMPLEMENTED: Item List');
+
+  Item.find({}, 'name price')
+  .sort({name : 1})
+  .exec((err, list_items) => {
+    if (err) {return next(err);}
+    // guard
+    res.render('item_list', { title: 'Items', item_list: list_items });
+  });
 };
 
 //Display specific item

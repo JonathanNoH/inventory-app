@@ -1,0 +1,15 @@
+extends layout 
+
+block content 
+  h1= title 
+
+  if error 
+    p Error fetching items
+  else 
+    ul
+      each item in item_list 
+        li 
+          a(href=item.url) #{item.name}
+          |   (#{item.price})
+      else 
+        li There are no items.
