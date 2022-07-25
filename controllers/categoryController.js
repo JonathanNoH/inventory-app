@@ -1,13 +1,42 @@
 const Category = require('../models/category');
+const Item = require('../models/item');
+
+const async = require('async');
 
 //Display list categories
 exports.category_list = (req, res) => {
-  res.send('NOT IMPLEMENTED: category list');
+  
+  Category.find({}, 'name')
+  .sort({name : 1})
+  .exec((err, list_categories) => {
+    if(err) {return next(err);}
+    // guard
+    res.render('category_list', { title: 'Categories', category_list: list_categories});
+  });
 };
 
 //Display category detail
 exports.category_detail = (req, res) => {
-  res.send('NOT IMPLEMENTED: category detail' + req.params.id);
+  
+  async.parallel({
+    category(callback) {
+      Category.findById(req.params.id)
+        .exec(callback);
+    },
+    category_items(callback) {
+      Item.find({ 'category': req.params.id })
+        .exec(callback)
+    },
+  }, (err, results) => {
+    if (err) { return next(err) };
+    if (results.category==null) {
+      let err = new Error('Category not found');
+      err.status = 404;
+      return next(err);
+    };
+    //successful
+    res.render('category_detail', { title: 'Category Detail', category: results.category, category_items: results.category_items});
+  });
 };
 
 //Display category create form on GET

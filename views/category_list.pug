@@ -1,0 +1,14 @@
+extends layout
+
+block content 
+  h1= title 
+
+  if error
+    p Error fetching categories.
+  else 
+    ul 
+      each category in category_list
+        li 
+          a(href=category.url) #{category.name}
+      else 
+        p There are no categories.
