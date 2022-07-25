@@ -32,7 +32,13 @@ exports.item_list = (req, res) => {
 
 //Display specific item
 exports.item_detail = (req, res) => {
-  res.send('NOT IMPLEMENTED: Item detail ' + req.params.id);
+  Item.findById(req.params.id)
+  .populate('category')
+    .exec((err, data) => {
+      if (err) {return next(err);}
+      // success
+      res.render('item_detail', { title: data.name, data: data })
+    });
 };
 
 //Display Item create form on GET.

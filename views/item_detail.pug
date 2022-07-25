@@ -1,0 +1,9 @@
+extends layout 
+
+block content 
+  h1= title 
+
+  p #{data.description}
+  p $ #{data.price}
+  p Number in Stock: #{data.numberInStock}
+  p #{data.category.name}
