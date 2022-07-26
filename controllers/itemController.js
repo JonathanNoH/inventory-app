@@ -1,6 +1,7 @@
 const Item = require('../models/item');
 const Category = require('../models/category');
 
+const { body, ValidationResult, validationResult } = require('express-validator');
 const async = require('async');
 
 //index
@@ -19,7 +20,7 @@ exports.index = (req, res) => {
 };
 
 //Display list of all items
-exports.item_list = (req, res) => {
+exports.item_list = (req, res, next) => {
 
   Item.find({}, 'name price')
   .sort({name : 1})
@@ -31,7 +32,7 @@ exports.item_list = (req, res) => {
 };
 
 //Display specific item
-exports.item_detail = (req, res) => {
+exports.item_detail = (req, res, next) => {
   Item.findById(req.params.id)
   .populate('category')
     .exec((err, data) => {
@@ -42,14 +43,55 @@ exports.item_detail = (req, res) => {
 };
 
 //Display Item create form on GET.
-exports.item_create_get = (req, res) => {
-  res.send('NOT IMPLEMENTED: Item create GET');
+exports.item_create_get = (req, res, next) => {
+  
+  Category.find({}, 'name')
+  .sort({name : 1})
+  .exec((err, categories) => {
+    if (err) {return next(err)};
+    res.render('item_form', { title: "Create New Item", categories });
+  });
 };
 
 //Handle Item create POST
-exports.item_create_post = (req, res) => {
-  res.send('NOT IMPLEMENTED: Item create POST');
-};
+exports.item_create_post = [
+  
+  // Validate and sanitize
+  body('name').trim().isLength({ min: 1}).escape().withMessage('Name must be included.'),
+  body('description').trim().isLength({ min: 1}).escape().withMessage('Please include a description.'),
+  body('price').escape(),
+  body('numberInStock').escape(),
+  body('category').escape(),
+
+  //Validated
+  (req, res, next) => {
+    const errors = validationResult(req);
+
+    let item = new Item(
+      {
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        numberInStock: req.body.numberInStock || 0,
+        category: req.body.category
+      }
+    );
+
+    if (!errors.isEmpty()) {
+      //errors rerender
+
+      res.render('item_form', { title: 'Create New Item', item: item, errors: errors.array()});
+      return;
+    } else {
+      //valid
+      item.save((err) => {
+        if(err) {return next(err)};
+        //success
+        res.redirect(item.url);
+      });
+    }
+  }
+];
 
 // Display item delete on GET
 exports.item_delete_get = (req, res) => {
