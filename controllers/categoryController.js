@@ -141,11 +141,57 @@ exports.category_delete_post = (req, res, next) => {
 };
 
 //Display category update GET
-exports.category_update_get = (req, res) => {
-  res.send('NOT IMPLEMENTED: category update GET');
+exports.category_update_get = (req, res, next) => {
+  Category.findById(req.params.id)
+  .exec((err, category) => {
+    if (err) { return next(err); };
+    if (category===null) {
+      let err = new Error('Category not found');
+      err.status = 404;
+      return next(err);
+    }
+    //category
+    res.render('category_form', { title: 'Update Category', category });
+  });
 };
 
 //Handle category update POST
-exports.category_update_post = (req, res) => {
-  res.send('NOT IMPLEMENTED: category update POST');
-};
+exports.category_update_post = [
+  //validate sanitize
+  body('name', 'Name must not be empty.').trim().isLength({ min: 1}).escape(),
+
+  //process req
+  (req, res, next) => {
+    const errors = validationResult(req);
+
+    let category = new Category(
+      {
+        name: req.body.name,
+        _id: req.params.id,
+      }
+    );
+
+    if(!errors.isEmpty()) {
+      //errors rerender
+      Category.findById(req.params.id)
+      .exec((err, category) => {
+        if (err) { return next(err); };
+        if (category===null) {
+          let err = new Error('Category not found');
+          err.status = 404;
+          return next(err);
+        }
+        //category
+        res.render('category_form', { title: 'Update Category', category });
+      });
+      return;
+    } else {
+      //valid
+      Category.findByIdAndUpdate(req.params.id, category, {}, (err,thecategory) => {
+        if(err) { return next(err); };
+        //success
+        res.redirect(thecategory.url);
+      });
+    }
+  }
+];
