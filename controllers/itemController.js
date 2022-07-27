@@ -94,13 +94,26 @@ exports.item_create_post = [
 ];
 
 // Display item delete on GET
-exports.item_delete_get = (req, res) => {
-  res.send('NOT IMPLEMENTED: Item delete GET');
+exports.item_delete_get = (req, res, next) => {
+  
+  Item.findById(req.params.id)
+  .populate('category')
+  .exec((err, item) => {
+    if (err) { return next(err); }
+    //results
+    res.render('item_delete', { title: `Delete Item`, item });
+  });
+
 };
 
 //Handle item delete on POST
-exports.item_delete_post = (req, res) => {
-  res.send('NOT IMPLEMENTED: Item delete POST');
+exports.item_delete_post = (req, res, next) => {
+  
+  Item.findByIdAndRemove(req.body.itemid, (err) => {
+    if(err) {return next(err); }
+    //success
+    res.redirect('/inventory/items');
+  });
 };
 
 //Handle item update on GET
