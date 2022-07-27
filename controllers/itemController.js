@@ -117,12 +117,84 @@ exports.item_delete_post = (req, res, next) => {
 };
 
 //Handle item update on GET
-exports.item_update_get = (req, res) => {
-  res.send('NOT IMPLEMENTED: ITEM update GET');
+exports.item_update_get = (req, res, next) => {
+  
+  async.parallel({
+    item(callback) {
+      Item.findById(req.params.id)
+      .populate('category')
+      .exec(callback);
+    },
+    categories(callback) {
+      Category.find(callback);
+    },
+  }, (err, results) => {
+    if (err) { return next(err); }
+    if (results.item===null) {
+      //no results
+      let err = new Error('Item not found');
+      err.status = 404;
+      return next(err);
+    }
+    //results
+    res.render('item_form', { title: 'Update Item', categories: results.categories, item: results.item});
+  });
 };
 
 //Handle item update on POST
-exports.item_update_post = (req, res) => {
-  res.send('NOT IMPLEMENTED: ITEM update POST');
-};
+exports.item_update_post = [ 
+  //validate sanitize
+  body('name', 'Name must not be empty.').trim().isLength({ min:1}).escape(),
+  body('description', 'Description must not be empty.').trim().isLength({ min: 1}).escape(),
+  body('price').escape(),
+  body('numberInStock').escape(),
+  body('category').escape(),
 
+  // process req
+  (req, res, next) => {
+    const errors = validationResult(req);
+
+    let item = new Item(
+      {
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        numberInStock: req.body.numberInStock,
+        category: req.body.category,
+        _id: req.params.id,
+      }
+    );
+
+    if(!errors.isEmpty()) {
+      //errors rerender
+      async.parallel({
+        item(callback) {
+          Item.findById(req.params.id)
+          .populate('category')
+          .exec(callback);
+        },
+        categories(callback) {
+          Category.find(callback);
+        },
+      }, (err, results) => {
+        if (err) { return next(err); }
+        if (results.item===null) {
+          //no results
+          let err = new Error('Item not found');
+          err.status = 404;
+          return next(err);
+        }
+        //results
+        res.render('item_form', { title: 'Update Item', categories: results.categories, item: results.item});
+      });
+      return;
+    } else {
+      //valid
+      Item.findByIdAndUpdate(req.params.id, item, {}, (err,theitem) => {
+        if (err) { return next(err); }
+        //success
+        res.redirect(theitem.url);
+      });
+    }
+  }
+];
