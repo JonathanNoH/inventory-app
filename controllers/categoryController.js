@@ -91,13 +91,53 @@ exports.category_create_post = [
 ];
 
 //Display category delete on GET
-exports.category_delete_get = (req, res) => {
-  res.send('NOT IMPLEMENTED: category delete GET');
+exports.category_delete_get = (req, res, next) => {
+  
+  async.parallel({
+    category(callback) {
+      Category.findById(req.params.id).exec(callback)
+    },
+    category_items(callback) {
+      Item.find({ 'category': req.params.id}).exec(callback)
+    },
+  }, (err, results) => {
+    if (err) { return next(err); }
+    if (results.category===null) {
+      // No results
+      res.redirect('/inventory/categories');
+    }
+    //results
+    res.render('category_delete', { title: 'Delete Category', category: results.category, category_items: results.category_items });
+  });
+
 };
 
 //Handle category delete POST
-exports.category_delete_post = (req, res) => {
-  res.send('NOT IMPLEMENTED: category delete POST');
+exports.category_delete_post = (req, res, next) => {
+  
+  async.parallel({
+    category(callback) {
+      Category.findById(req.body.categoryid).exec(callback)
+    },
+    category_items(callback) {
+      Item.find({ 'category': req.body.categoryid}).exec(callback)
+    },
+  }, (err, results) => {
+    if (err) { return next(err); }
+    // results
+    if (results.category_items.length > 0) {
+      //category still has items. render get route
+      res.render('category_delete', { title: 'Delete Category', category: results.category, category_items: results.category_items });
+      return;
+    } else {
+      // Category has no items. Delete category redirect to category list
+      Category.findByIdAndRemove(req.body.categoryid, (err) => {
+        if(err) { return next(err); }
+        //success
+        res.redirect('/inventory/categories')
+      });
+    }
+  });
 };
 
 //Display category update GET
